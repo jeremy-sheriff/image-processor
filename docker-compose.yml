@@ -1,0 +1,9 @@
+version: "3.9"
+
+services:
+  image-processor:
+    image: muhohoweb/image-processor:latest
+    volumes:
+      - ./source_folder:/app/source_folder
+      - ./processed_folder:/app/processed_folder
+      - ./output.csv:/app/output.csv
