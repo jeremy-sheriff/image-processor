@@ -12,22 +12,36 @@
       background: white;
       padding: 30px;
       border-radius: 6px;
-      max-width: 800px;
+      max-width: 1000px;
       margin: auto;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      display: flex;
+      gap: 30px;
     }
-    h2 {
+    .left, .right {
+      flex: 1;
+    }
+    .left {
       text-align: center;
+      border-right: 1px solid #ddd;
+      padding-right: 20px;
     }
-    .sample {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    .sample img {
-      max-width: 400px;
+    .left img {
+      max-width: 100%;
       border: 1px solid #ccc;
       border-radius: 4px;
       box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      margin-bottom: 10px;
+    }
+    .left a {
+      display: inline-block;
+      margin-top: 10px;
+      background: #007bff;
+      color: white;
+      text-decoration: none;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 14px;
     }
     .dropzone {
       border: 2px dashed #007bff;
@@ -89,9 +103,6 @@
       color: red;
       font-weight: bold;
     }
-    #buttons {
-      text-align: center;
-    }
     table {
       width: 100%;
       border-collapse: collapse;
@@ -108,33 +119,40 @@
 </head>
 <body>
   <div class="container">
-    <h2>Upload Images to Extract Table Data</h2>
-    <div class="sample">
-      <p><strong>Example Image You Can Use:</strong></p>
+    <!-- Left Column -->
+    <div class="left">
+      <h3>Example Image</h3>
       <img src="/static/sample_table_handwritten.jpg" alt="Sample Table Example">
+      <br>
+      <a href="/static/sample_table_handwritten.jpg" download>⬇ Download Example</a>
     </div>
-    <div class="dropzone" id="dropzone">
-      Drag & Drop Images Here or Click to Select<br>
-      <span style="font-size:14px; color:#555;">😳 Images must be JPG/JPEG and not more than 2 MB!</span>
+
+    <!-- Right Column -->
+    <div class="right">
+      <h2>Upload Images to Extract Table Data</h2>
+      <div class="dropzone" id="dropzone">
+        Drag & Drop Images Here or Click to Select<br>
+        <span style="font-size:14px; color:#555;">😳 Images must be JPG/JPEG and not more than 2 MB!</span>
+      </div>
+      <input type="file" id="fileInput" multiple accept="image/*" style="display:none;">
+      <div id="buttons">
+        <button id="uploadBtn" disabled>Process Files</button>
+        <button id="clearBtn">Clear</button>
+        <button id="downloadCsvBtn" disabled>Download All Records</button>
+      </div>
+      <div class="status" id="statusContainer"></div>
+      <h3>Extracted Records</h3>
+      <table id="recordsTable">
+        <thead>
+          <tr>
+            <th>Number</th>
+            <th>Name</th>
+            <th>Quantity</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
     </div>
-    <input type="file" id="fileInput" multiple accept="image/*" style="display:none;">
-    <div id="buttons">
-      <button id="uploadBtn">Process Files</button>
-      <button id="clearBtn">Clear</button>
-      <button id="downloadCsvBtn" disabled>Download All Records</button>
-    </div>
-    <div class="status" id="statusContainer"></div>
-    <h3>Extracted Records</h3>
-    <table id="recordsTable">
-      <thead>
-        <tr>
-          <th>Number</th>
-          <th>Name</th>
-          <th>Quantity</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
   </div>
 
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
