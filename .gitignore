@@ -2,6 +2,7 @@ Dockerfile
 # Environment and secrets
 .env
 
+
 # Output and runtime files
 output.csv
 

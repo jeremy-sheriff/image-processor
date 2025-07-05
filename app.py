@@ -103,6 +103,5 @@ def process_files():
 def download_csv():
     return send_file(OUTPUT_CSV, as_attachment=True)
 
-
 if __name__ == "__main__":
     app.run(debug=True)
