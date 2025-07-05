@@ -12,7 +12,7 @@
       background: white;
       padding: 30px;
       border-radius: 6px;
-      max-width: 600px;
+      max-width: 800px;
       margin: auto;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
@@ -82,6 +82,18 @@
     #buttons {
       text-align: center;
     }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    table, th, td {
+      border: 1px solid #ccc;
+    }
+    th, td {
+      padding: 8px;
+      text-align: left;
+    }
   </style>
 </head>
 <body>
@@ -95,26 +107,33 @@
     <div id="buttons">
       <button id="uploadBtn">Process Files</button>
       <button id="clearBtn">Clear</button>
+      <button id="downloadCsvBtn" disabled>Download All Records</button>
     </div>
     <div class="status" id="statusContainer"></div>
+    <h3>Extracted Records</h3>
+    <table id="recordsTable">
+      <thead>
+        <tr>
+          <th>Number</th>
+          <th>Name</th>
+          <th>Quantity</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
   </div>
 
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>
     let selectedFiles = [];
+    let allRecords = [];
+
+    function updateButtonState() {
+      $("#uploadBtn").prop("disabled", selectedFiles.length === 0);
+    }
 
     const dropzone = $("#dropzone");
 
-    // Helper to enable/disable Process button
-    function updateButtonState() {
-      if (selectedFiles.length === 0) {
-        $("#uploadBtn").prop("disabled", true);
-      } else {
-        $("#uploadBtn").prop("disabled", false);
-      }
-    }
-
-    // Drag events
     dropzone.on("dragover", function(e) {
       e.preventDefault();
       e.stopPropagation();
@@ -135,35 +154,26 @@
       addFiles(files);
     });
 
-    // Click to open file dialog
     dropzone.on("click", function() {
       $("#fileInput").click();
     });
 
-    // File input change
     $("#fileInput").on("change", function(e) {
       addFiles(e.target.files);
     });
 
-    // Add files to selectedFiles array
     function addFiles(files) {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-
-        // Check extension
         const ext = file.name.split('.').pop().toLowerCase();
         if (ext !== "jpg" && ext !== "jpeg") {
           alert(`File "${file.name}" is not a JPG image.`);
           continue;
         }
-
-        // Check size (2 MB = 2 * 1024 * 1024 bytes)
         if (file.size > 2 * 1024 * 1024) {
           alert(`File "${file.name}" exceeds 2 MB limit.`);
           continue;
         }
-
-        // Passed validation
         selectedFiles.push(file);
         $("#statusContainer").append(`
           <div class="file-status" id="file-${selectedFiles.length - 1}">
@@ -174,7 +184,6 @@
       updateButtonState();
     }
 
-    // Process Files button
     $("#uploadBtn").on("click", function() {
       if (selectedFiles.length === 0) {
         alert("Please select files.");
@@ -204,13 +213,25 @@
         processData: false,
         contentType: false,
         success: function(response) {
+          response.forEach(record => {
+            allRecords.push(record);
+            $("#recordsTable tbody").append(`
+              <tr>
+                <td>${record.number}</td>
+                <td>${record.name}</td>
+                <td>${record.quantity}</td>
+              </tr>
+            `);
+          });
           $(".file-status").each(function() {
             $(this).find(".spinner").remove();
             $(this).append(`<span class="success">✔ Done</span>`);
           });
+          if (allRecords.length > 0) {
+            $("#downloadCsvBtn").prop("disabled", false);
+          }
           $("#uploadBtn").prop("disabled", false).text("Process Files");
           $("#clearBtn").prop("disabled", false);
-          window.location.href = "/download";
         },
         error: function() {
           $(".file-status").each(function() {
@@ -223,7 +244,6 @@
       });
     });
 
-    // Clear button
     $("#clearBtn").on("click", function() {
       selectedFiles = [];
       $("#statusContainer").empty();
@@ -231,7 +251,21 @@
       updateButtonState();
     });
 
-    // Initialize button state on page load
+    $("#downloadCsvBtn").on("click", function() {
+      if (allRecords.length === 0) return;
+      let csvContent = "data:text/csv;charset=utf-8,Number,Name,Quantity\n";
+      allRecords.forEach(row => {
+        csvContent += `${row.number},${row.name},${row.quantity}\n`;
+      });
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "records.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+
     updateButtonState();
   </script>
 </body>

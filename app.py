@@ -3,10 +3,11 @@ import csv
 import base64
 import re
 import json
-from flask import Flask, render_template, request, send_file
+from flask import Flask, render_template, request
 from werkzeug.utils import secure_filename
 from openai import OpenAI
 from dotenv import load_dotenv
+
 load_dotenv()
 
 # Initialize OpenAI
@@ -15,7 +16,6 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 # Paths
 UPLOAD_FOLDER = "uploads"
 PROCESSED_FOLDER = "processed"
-OUTPUT_CSV = "output.csv"
 
 # Make folders if they don't exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -29,17 +29,13 @@ app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 def upload_page():
     return render_template("upload.html")
 
-
 @app.route("/process", methods=["POST"])
 def process_files():
     files = request.files.getlist("files")
     if not files:
         return "No files uploaded", 400
 
-    # Start a fresh CSV
-    with open(OUTPUT_CSV, mode="w", newline="", encoding="utf-8") as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(["Number", "Name", "Quantity"])
+    all_rows = []
 
     for file in files:
         filename = secure_filename(file.filename)
@@ -90,6 +86,7 @@ def process_files():
         except json.JSONDecodeError as e:
             print(f"JSON decode error in {filename}: {e}")
             continue
+
         # Validate that each row has exactly 'number', 'name', and 'quantity'
         valid = True
         for row in data:
@@ -101,19 +98,11 @@ def process_files():
         if not valid:
             continue
 
-        with open(OUTPUT_CSV, mode="a", newline="", encoding="utf-8") as csvfile:
-            writer = csv.writer(csvfile)
-            for row in data:
-                writer.writerow([row["number"], row["name"], row["quantity"]])
+        all_rows.extend(data)
 
         os.rename(file_path, os.path.join(PROCESSED_FOLDER, filename))
 
-    return "OK"
-
-
-@app.route("/download")
-def download_csv():
-    return send_file(OUTPUT_CSV, as_attachment=True)
+    return json.dumps(all_rows), 200, {"Content-Type": "application/json"}
 
 if __name__ == "__main__":
     app.run(debug=True)
