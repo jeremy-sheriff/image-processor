@@ -87,12 +87,13 @@
   <div class="container">
     <h2>Upload Images to Extract Table Data</h2>
     <div class="dropzone" id="dropzone">
-      Drag & Drop Images Here or Click to Select
+      Drag & Drop Images Here or Click to Select<br>
+      <span style="font-size:14px; color:#555;">😳 Images must be JPG/JPEG and not more than 2 MB!</span>
     </div>
-    <input type="file" id="fileInput" multiple accept="image/*" style="display:none;">
+    <input type="file" id="fileInput" mutiple accept="image/*" style="display:none;">
     <div id="buttons">
       <button id="uploadBtn">Process Files</button>
-      <button id="clearBtn">Clear</button>
+      <button id="clearBtn">Clear</button>Ò
     </div>
     <div class="status" id="statusContainer"></div>
   </div>
@@ -137,13 +138,28 @@
     // Add files to selectedFiles array
     function addFiles(files) {
       for (let i = 0; i < files.length; i++) {
-        selectedFiles.push(files[i]);
-        $("#statusContainer").append(`
-          <div class="file-status" id="file-${selectedFiles.length - 1}">
-            <span>${files[i].name}</span>
-          </div>
-        `);
-      }
+    const file = files[i];
+
+    // Check extension
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (ext !== "jpg" && ext !== "jpeg") {
+      alert(`File "${file.name}" is not a JPG image.`);
+      continue;
+    }
+    // Check size (2 MB = 2 * 1024 * 1024 bytes)
+    if (file.size > 2 * 1024 * 1024) {
+      alert(`File "${file.name}" exceeds 2 MB limit.`);
+      continue;
+    }
+
+    // Passed validation
+    selectedFiles.push(file);
+    $("#statusContainer").append(`
+      <div class="file-status" id="file-${selectedFiles.length - 1}">
+        <span>${file.name}</span>
+      </div>
+    `);
+  }
     }
 
     // Process Files button
