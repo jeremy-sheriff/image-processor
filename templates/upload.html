@@ -44,6 +44,7 @@
     }
     button:disabled {
       background-color: #cccccc;
+      cursor: not-allowed;
     }
     .status {
       margin-top: 20px;
@@ -90,7 +91,7 @@
       Drag & Drop Images Here or Click to Select<br>
       <span style="font-size:14px; color:#555;">😳 Images must be JPG/JPEG and not more than 2 MB!</span>
     </div>
-    <input type="file" id="fileInput" mutiple accept="image/*" style="display:none;">
+    <input type="file" id="fileInput" multiple accept="image/*" style="display:none;">
     <div id="buttons">
       <button id="uploadBtn">Process Files</button>
       <button id="clearBtn">Clear</button>
@@ -103,6 +104,15 @@
     let selectedFiles = [];
 
     const dropzone = $("#dropzone");
+
+    // Helper to enable/disable Process button
+    function updateButtonState() {
+      if (selectedFiles.length === 0) {
+        $("#uploadBtn").prop("disabled", true);
+      } else {
+        $("#uploadBtn").prop("disabled", false);
+      }
+    }
 
     // Drag events
     dropzone.on("dragover", function(e) {
@@ -138,28 +148,30 @@
     // Add files to selectedFiles array
     function addFiles(files) {
       for (let i = 0; i < files.length; i++) {
-    const file = files[i];
+        const file = files[i];
 
-    // Check extension
-    const ext = file.name.split('.').pop().toLowerCase();
-    if (ext !== "jpg" && ext !== "jpeg") {
-      alert(`File "${file.name}" is not a JPG image.`);
-      continue;
-    }
-    // Check size (2 MB = 2 * 1024 * 1024 bytes)
-    if (file.size > 2 * 1024 * 1024) {
-      alert(`File "${file.name}" exceeds 2 MB limit.`);
-      continue;
-    }
+        // Check extension
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (ext !== "jpg" && ext !== "jpeg") {
+          alert(`File "${file.name}" is not a JPG image.`);
+          continue;
+        }
 
-    // Passed validation
-    selectedFiles.push(file);
-    $("#statusContainer").append(`
-      <div class="file-status" id="file-${selectedFiles.length - 1}">
-        <span>${file.name}</span>
-      </div>
-    `);
-  }
+        // Check size (2 MB = 2 * 1024 * 1024 bytes)
+        if (file.size > 2 * 1024 * 1024) {
+          alert(`File "${file.name}" exceeds 2 MB limit.`);
+          continue;
+        }
+
+        // Passed validation
+        selectedFiles.push(file);
+        $("#statusContainer").append(`
+          <div class="file-status" id="file-${selectedFiles.length - 1}">
+            <span>${file.name}</span>
+          </div>
+        `);
+      }
+      updateButtonState();
     }
 
     // Process Files button
@@ -216,7 +228,11 @@
       selectedFiles = [];
       $("#statusContainer").empty();
       $("#fileInput").val(null);
+      updateButtonState();
     });
+
+    // Initialize button state on page load
+    updateButtonState();
   </script>
 </body>
 </html>
