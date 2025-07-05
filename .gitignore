@@ -1,1 +1,11 @@
 Dockerfile
+# Environment and secrets
+.env
+
+# Output and runtime files
+output.csv
+
+# Uploaded and processed images
+uploads/
+processed/
+processed_folder/
