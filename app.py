@@ -90,6 +90,16 @@ def process_files():
         except json.JSONDecodeError as e:
             print(f"JSON decode error in {filename}: {e}")
             continue
+        # Validate that each row has exactly 'number', 'name', and 'quantity'
+        valid = True
+        for row in data:
+            if not all(key in row for key in ["number", "name", "quantity"]):
+                print(f"Invalid data format in {filename}. Skipping.")
+                valid = False
+                break
+
+        if not valid:
+            continue
 
         with open(OUTPUT_CSV, mode="a", newline="", encoding="utf-8") as csvfile:
             writer = csv.writer(csvfile)
