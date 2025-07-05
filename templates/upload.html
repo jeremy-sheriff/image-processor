@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Upload Images</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      padding: 40px;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 6px;
+      max-width: 600px;
+      margin: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+    }
+    .dropzone {
+      border: 2px dashed #007bff;
+      padding: 40px;
+      text-align: center;
+      color: #888;
+      cursor: pointer;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      transition: background 0.3s;
+    }
+    .dropzone.dragover {
+      background: #e6f0ff;
+    }
+    button {
+      background-color: #007bff;
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 4px;
+      margin: 5px;
+    }
+    button:disabled {
+      background-color: #cccccc;
+    }
+    .status {
+      margin-top: 20px;
+    }
+    .file-status {
+      margin-bottom: 10px;
+      padding: 8px;
+      background: #eef;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 3px solid #ccc;
+      border-top: 3px solid #007bff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .success {
+      color: green;
+      font-weight: bold;
+    }
+    .error {
+      color: red;
+      font-weight: bold;
+    }
+    #buttons {
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Upload Images to Extract Table Data</h2>
+    <div class="dropzone" id="dropzone">
+      Drag & Drop Images Here or Click to Select
+    </div>
+    <input type="file" id="fileInput" multiple accept="image/*" style="display:none;">
+    <div id="buttons">
+      <button id="uploadBtn">Process Files</button>
+      <button id="clearBtn">Clear</button>
+    </div>
+    <div class="status" id="statusContainer"></div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    let selectedFiles = [];
+
+    const dropzone = $("#dropzone");
+
+    // Drag events
+    dropzone.on("dragover", function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dropzone.addClass("dragover");
+    });
+
+    dropzone.on("dragleave", function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dropzone.removeClass("dragover");
+    });
+
+    dropzone.on("drop", function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dropzone.removeClass("dragover");
+      const files = e.originalEvent.dataTransfer.files;
+      addFiles(files);
+    });
+
+    // Click to open file dialog
+    dropzone.on("click", function() {
+      $("#fileInput").click();
+    });
+
+    // File input change
+    $("#fileInput").on("change", function(e) {
+      addFiles(e.target.files);
+    });
+
+    // Add files to selectedFiles array
+    function addFiles(files) {
+      for (let i = 0; i < files.length; i++) {
+        selectedFiles.push(files[i]);
+        $("#statusContainer").append(`
+          <div class="file-status" id="file-${selectedFiles.length - 1}">
+            <span>${files[i].name}</span>
+          </div>
+        `);
+      }
+    }
+
+    // Process Files button
+    $("#uploadBtn").on("click", function() {
+      if (selectedFiles.length === 0) {
+        alert("Please select files.");
+        return;
+      }
+
+      const formData = new FormData();
+      $("#statusContainer").empty();
+
+      selectedFiles.forEach((file, i) => {
+        formData.append("files", file);
+        $("#statusContainer").append(`
+          <div class="file-status" id="file-${i}">
+            <span>${file.name}</span>
+            <span class="spinner"></span>
+          </div>
+        `);
+      });
+
+      $("#uploadBtn").prop("disabled", true).text("Processing...");
+      $("#clearBtn").prop("disabled", true);
+
+      $.ajax({
+        url: "/process",
+        type: "POST",
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(response) {
+          $(".file-status").each(function() {
+            $(this).find(".spinner").remove();
+            $(this).append(`<span class="success">✔ Done</span>`);
+          });
+          $("#uploadBtn").prop("disabled", false).text("Process Files");
+          $("#clearBtn").prop("disabled", false);
+          window.location.href = "/download";
+        },
+        error: function() {
+          $(".file-status").each(function() {
+            $(this).find(".spinner").remove();
+            $(this).append(`<span class="error">✖ Failed</span>`);
+          });
+          $("#uploadBtn").prop("disabled", false).text("Process Files");
+          $("#clearBtn").prop("disabled", false);
+        }
+      });
+    });
+
+    // Clear button
+    $("#clearBtn").on("click", function() {
+      selectedFiles = [];
+      $("#statusContainer").empty();
+      $("#fileInput").val(null);
+    });
+  </script>
+</body>
+</html>

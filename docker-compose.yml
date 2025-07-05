@@ -1,9 +1,14 @@
 version: "3.9"
 
 services:
-  image-processor:
-    image: muhohoweb/image-processor:latest
+  app:
+    build: .
+    image: muhohoweb/image-processor
+    container_name: image_processor_app
+    ports:
+      - "80:5000"
+    env_file:
+      - .env
     volumes:
-      - ./source_folder:/app/source_folder
-      - ./processed_folder:/app/processed_folder
-      - ./output.csv:/app/output.csv
+      - ./uploads:/app/uploads
+      - ./processed:/app/processed

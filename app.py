@@ -1,35 +1,55 @@
 import os
 import csv
-import shutil
 import base64
-from openai import OpenAI
 import re
 import json
+from flask import Flask, render_template, request, send_file
+from werkzeug.utils import secure_filename
+from openai import OpenAI
 
+# Initialize OpenAI
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Paths
-SOURCE_FOLDER = "source_folder"
-PROCESSED_FOLDER = "processed_folder"
+UPLOAD_FOLDER = "uploads"
+PROCESSED_FOLDER = "processed"
 OUTPUT_CSV = "output.csv"
 
-# Make sure processed folder exists
+# Make folders if they don't exist
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(PROCESSED_FOLDER, exist_ok=True)
 
-# Check if output.csv exists, if not create it with headers
-if not os.path.exists(OUTPUT_CSV):
+# Initialize Flask app
+app = Flask(__name__)
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+
+@app.route("/", methods=["GET"])
+def upload_page():
+    return render_template("upload.html")
+
+
+@app.route("/process", methods=["POST"])
+def process_files():
+    files = request.files.getlist("files")
+    if not files:
+        return "No files uploaded", 400
+
+    # Start a fresh CSV
     with open(OUTPUT_CSV, mode="w", newline="", encoding="utf-8") as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(["Number", "Name", "Quantity"])
 
-# Process each image
-for filename in os.listdir(SOURCE_FOLDER):
-    if filename.lower().endswith((".jpg", ".jpeg", ".png")):
-        image_path = os.path.join(SOURCE_FOLDER, filename)
+    for file in files:
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+        file.save(file_path)
 
-        print(f"Processing: {filename}")
+        print(f"Processing {filename}")
 
-        # Call OpenAI Vision API
+        with open(file_path, "rb") as img_f:
+            b64_data = base64.b64encode(img_f.read()).decode()
+
+        # OpenAI Vision API call
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
@@ -49,9 +69,7 @@ for filename in os.listdir(SOURCE_FOLDER):
                         },
                         {
                             "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/jpeg;base64,{base64.b64encode(open(image_path, 'rb').read()).decode()}"
-                            }
+                            "image_url": {"url": f"data:image/jpeg;base64,{b64_data}"}
                         }
                     ]
                 }
@@ -59,29 +77,32 @@ for filename in os.listdir(SOURCE_FOLDER):
             temperature=0
         )
 
-        # Get the raw text
         json_text = response.choices[0].message.content.strip()
-
-        # Extract JSON substring using regex
         match = re.search(r"\[.*\]", json_text, re.DOTALL)
         if not match:
-            print(f"No JSON found in response for {filename}. Skipping.")
+            print(f"No JSON found in {filename}")
             continue
-
-        json_str = match.group(0)
 
         try:
-            data = json.loads(json_str)
+            data = json.loads(match.group(0))
         except json.JSONDecodeError as e:
-            print(f"JSON decode error for {filename}: {e}")
+            print(f"JSON decode error in {filename}: {e}")
             continue
 
-        # Append to CSV
         with open(OUTPUT_CSV, mode="a", newline="", encoding="utf-8") as csvfile:
             writer = csv.writer(csvfile)
             for row in data:
                 writer.writerow([row["number"], row["name"], row["quantity"]])
 
-        # Move file to processed folder
-        shutil.move(image_path, os.path.join(PROCESSED_FOLDER, filename))
-        print(f"Done processing {filename}.\n")
+        os.rename(file_path, os.path.join(PROCESSED_FOLDER, filename))
+
+    return "OK"
+
+
+@app.route("/download")
+def download_csv():
+    return send_file(OUTPUT_CSV, as_attachment=True)
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
