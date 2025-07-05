@@ -19,6 +19,16 @@
     h2 {
       text-align: center;
     }
+    .sample {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .sample img {
+      max-width: 400px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
     .dropzone {
       border: 2px dashed #007bff;
       padding: 40px;
@@ -99,8 +109,12 @@
 <body>
   <div class="container">
     <h2>Upload Images to Extract Table Data</h2>
+    <div class="sample">
+      <p><strong>Example Image You Can Use:</strong></p>
+      <img src="/static/sample_table_handwritten.jpg" alt="Sample Table Example">
+    </div>
     <div class="dropzone" id="dropzone">
-      Hey there!! Please Drag & Drop Images Here or Click to Select<br>
+      Drag & Drop Images Here or Click to Select<br>
       <span style="font-size:14px; color:#555;">😳 Images must be JPG/JPEG and not more than 2 MB!</span>
     </div>
     <input type="file" id="fileInput" multiple accept="image/*" style="display:none;">
@@ -127,7 +141,7 @@
   <script>
     let selectedFiles = [];
     let allRecords = [];
-    let recordSet = new Set(); // Track unique records
+    let recordSet = new Set();
 
     function updateButtonState() {
       $("#uploadBtn").prop("disabled", selectedFiles.length === 0);
