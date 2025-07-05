@@ -1,0 +1,60 @@
+name: CI/CD Deploy to AWS Lightsail Container Service
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  IMAGE_NAME: muhohoweb/image-processor
+  SERVICE_NAME: muhohoweb-service
+
+jobs:
+  build-push-deploy:
+    runs-on: ubuntu-latest
+    environment: prod
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and Push Docker Image
+        run: |
+          docker build -t $IMAGE_NAME:latest .
+          docker push $IMAGE_NAME:latest
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Deploy to Lightsail Container Service
+        run: |
+          CONFIG=$(cat <<EOF
+          [
+            {
+              "containerName": "muhohoweb-container",
+              "image": "$IMAGE_NAME:latest",
+              "environment": {
+                "OPENAI_API_KEY": "${{ secrets.OPENAI_API_KEY }}"
+              },
+              "ports": {
+                "5000": "HTTP"
+              }
+            }
+          ]
+          EOF
+          )
+
+          aws lightsail create-container-service-deployment \
+            --service-name $SERVICE_NAME \
+            --containers "$CONFIG" \
+            --public-endpoint '{"containerName":"muhohoweb-container","containerPort":5000,"healthCheck":{"path":"/"}}'

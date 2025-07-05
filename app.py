@@ -6,6 +6,8 @@ import json
 from flask import Flask, render_template, request, send_file
 from werkzeug.utils import secure_filename
 from openai import OpenAI
+from dotenv import load_dotenv
+load_dotenv()
 
 # Initialize OpenAI
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
