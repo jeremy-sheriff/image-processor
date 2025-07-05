@@ -38,7 +38,26 @@ jobs:
 
       - name: Deploy to Lightsail Container Service
         run: |
+          CONTAINERS_JSON=$(jq -n \
+            --arg image "$IMAGE_NAME:latest" \
+            --arg key "${{ secrets.OPENAI_API_KEY }}" \
+            '[{
+              containerName: "muhohoweb-container",
+              image: $image,
+              environment: {
+                OPENAI_API_KEY: $key
+              },
+              ports: {
+                "5000": "HTTP"
+              }
+            }]'
+          )
+
+          echo "Deploying with containers config:"
+          echo "$CONTAINERS_JSON"
+
           aws lightsail create-container-service-deployment \
-            --service-name $SERVICE_NAME \
-            --containers '[{"containerName":"muhohoweb-container","image":"'"$IMAGE_NAME"':latest","environment":{"OPENAI_API_KEY":"'"${{ secrets.OPENAI_API_KEY }}"'"},"ports":{"5000":"HTTP"}}]' \
+            --service-name "$SERVICE_NAME" \
+            --containers "$CONTAINERS_JSON" \
             --public-endpoint '{"containerName":"muhohoweb-container","containerPort":5000,"healthCheck":{"path":"/"}}'
+
