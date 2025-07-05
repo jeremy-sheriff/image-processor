@@ -132,7 +132,7 @@
       <h2>Upload Images to Extract Table Data</h2>
       <div class="dropzone" id="dropzone">
         Drag & Drop Images Here or Click to Select<br>
-        <span style="font-size:14px; color:#555;">😳 Images must be JPG/JPEG and not more than 2 MB!</span>
+        <span style="font-size:14px; color:#555;">😳 Images must be JPG/JPEG and not more than 8 MB!</span>
       </div>
       <input type="file" id="fileInput" multiple accept="image/*" style="display:none;">
       <div id="buttons">
@@ -203,8 +203,8 @@
           alert(`File "${file.name}" is not a JPG image.`);
           continue;
         }
-        if (file.size > 2 * 1024 * 1024) {
-          alert(`File "${file.name}" exceeds 2 MB limit.`);
+        if (file.size > 8 * 1024 * 1024) {
+          alert(`File "${file.name}" exceeds 8 MB limit.`);
           continue;
         }
         selectedFiles.push(file);
@@ -309,4 +309,7 @@
     updateButtonState();
   </script>
 </body>
+<div style="text-align: center; font-size: 14px; color: #666; margin-top: 40px;">
+    Software Created by Muhoho
+  </div>
 </html>
